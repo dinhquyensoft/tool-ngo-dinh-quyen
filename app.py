@@ -16,8 +16,11 @@ st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout
 
 # Tiêu đề gốc
 
-st.markdown("<h1 style='text-align: center;'>GIẢI PHÁP ĐỊNH VỊ THƯƠNG HIỆU HÌNH ẢNH</h1>", unsafe_allow_html=True)
-
+st.markdown("""
+    <h1 style='text-align: center; color: #D4AF37; text-shadow: 2px 2px 4px #000000;'>
+        NGÔ ĐÌNH QUYỀN | GIẢI PHÁP ĐỊNH VỊ THƯƠNG HIỆU HÌNH ẢNH
+    </h1>
+""", unsafe_allow_html=True)
 
 
 # BƯỚC 1: CHỌN LOGO
