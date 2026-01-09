@@ -1,7 +1,6 @@
 import streamlit as st
 from PIL import Image
 import io
-import os
 from concurrent.futures import ThreadPoolExecutor
 
 # Cấu hình giao diện Ngô Đình Quyền - Giữ nguyên tuyệt đối
@@ -16,32 +15,16 @@ logo_file = st.file_uploader("🖼️ Bước 1: Chọn Logo (PNG trong suốt)"
 # BƯỚC 2: CHỌN ẢNH CẦN XỬ LÝ
 image_files = st.file_uploader("📁 Bước 2: Chọn các ảnh muốn đóng dấu", type=['jpg', 'jpeg', 'png'], accept_multiple_files=True)
 
-# BẢNG 9 Ô VỊ TRÍ
-st.subheader("📍 Vị trí đóng dấu (9 ô)")
-c_left, c_mid, c_right = st.columns(3)
-with c_left:
-    pos_tl = st.checkbox("Trên - Trái", key="tl")
-    pos_ml = st.checkbox("Giữa - Trái", key="ml")
-    pos_bl = st.checkbox("Dưới - Trái", key="bl")
-with c_mid:
-    pos_tc = st.checkbox("Trên - Giữa", key="tc")
-    pos_mc = st.checkbox("Chính Giữa", key="mc", value=True)
-    pos_bc = st.checkbox("Dưới - Giữa", key="bc")
-with c_right:
-    pos_tr = st.checkbox("Trên - Phải", key="tr")
-    pos_mr = st.checkbox("Giữa - Phải", key="mr")
-    pos_br = st.checkbox("Dưới - Phải", key="br")
+# SỬA LỖI VỊ TRÍ: Chuyển từ Checkbox sang Radio để chỉ được chọn 1 ô duy nhất
+st.subheader("📍 Vị trí đóng dấu (Chỉ chọn 1)")
+pos_options = [
+    "Trên - Trái", "Trên - Giữa", "Trên - Phải",
+    "Giữa - Trái", "Chính Giữa", "Giữa - Phải",
+    "Dưới - Trái", "Dưới - Giữa", "Dưới - Phải"
+]
 
-def get_selected_pos():
-    if pos_tl: return "Trên - Trái"
-    if pos_tc: return "Trên - Giữa"
-    if pos_tr: return "Trên - Phải"
-    if pos_ml: return "Giữa - Trái"
-    if pos_mc: return "Chính Giữa"
-    if pos_mr: return "Giữa - Phải"
-    if pos_bl: return "Dưới - Trái"
-    if pos_bc: return "Dưới - Giữa"
-    return "Dưới - Phải"
+# Hiển thị bảng 9 ô dùng Radio chọn duy nhất 1
+selected_pos = st.radio("Chọn vị trí chính xác:", pos_options, index=4, horizontal=True)
 
 # CẤU HÌNH WATERMARK
 st.subheader("⚙️ Cấu hình Watermark")
@@ -65,8 +48,7 @@ def tinh_toa_do(img_w, img_h, wm_w, wm_h, pos, offset=30):
     }
     return mapping.get(pos, (offset, offset))
 
-# HÀM XỬ LÝ ẢNH RIÊNG BIỆT ĐỂ TĂNG TỐC
-def process_single_image(uploaded_file, logo_raw, size_percent, opacity, current_pos):
+def process_single_image(uploaded_file, logo_raw, size_percent, opacity, pos_choice):
     img = Image.open(uploaded_file).convert("RGBA")
     img_w, img_h = img.size
     scale = (img_w * size_percent / 100) / logo_raw.size[0]
@@ -74,23 +56,19 @@ def process_single_image(uploaded_file, logo_raw, size_percent, opacity, current
     wm_final = logo_raw.resize((wm_w, wm_h), Image.LANCZOS)
     alpha = wm_final.split()[3].point(lambda p: p * (opacity / 100))
     wm_final.putalpha(alpha)
-    x, y = tinh_toa_do(img_w, img_h, wm_w, wm_h, current_pos)
+    x, y = tinh_toa_do(img_w, img_h, wm_w, wm_h, pos_choice)
     img.paste(wm_final, (x, y), wm_final)
     res_img = img.convert("RGB")
     buf = io.BytesIO()
     res_img.save(buf, format="JPEG", quality=90)
     return uploaded_file.name, res_img, buf.getvalue()
 
-# XỬ LÝ CHÍNH VỚI TỐC ĐỘ CAO
+# XỬ LÝ CHÍNH TỐC ĐỘ CAO
 if st.button("🚀 BẮT ĐẦU XỬ LÝ (TỐC ĐỘ CAO)"):
     if logo_file and image_files:
-        current_pos = get_selected_pos()
         logo_raw = Image.open(logo_file).convert("RGBA")
-        
-        # Sử dụng ThreadPoolExecutor để chạy đa luồng
         with ThreadPoolExecutor() as executor:
-            futures = [executor.submit(process_single_image, f, logo_raw, size_percent, opacity, current_pos) for f in image_files]
-            
+            futures = [executor.submit(process_single_image, f, logo_raw, size_percent, opacity, selected_pos) for f in image_files]
             for future in futures:
                 name, res_img, byte_data = future.result()
                 st.image(res_img, caption=name, use_container_width=True)
