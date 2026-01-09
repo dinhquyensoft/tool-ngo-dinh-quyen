@@ -16,7 +16,7 @@ st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout
 
 # Tiêu đề gốc
 
-st.markdown("<h1 style='text-align: center;'>🚀 CÔNG CỤ ĐÓNG DẤU ẢNH CHUYÊN NGHIỆP</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>GIẢI PHÁP ĐỊNH VỊ THƯƠNG HIỆU HÌNH ẢNH</h1>", unsafe_allow_html=True)
 
 
 
