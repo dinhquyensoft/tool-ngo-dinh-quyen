@@ -146,7 +146,7 @@ if st.button("🚀 BẮT ĐẦU XỬ LÝ (TỐC ĐỘ CAO)"):
 
                 st.image(res_img, caption=name, use_container_width=True)
 
-                st.download_button(label=f"📥 Tải {name}", data=byte_data, file_name=f"wm_{name}", mime="image/jpeg")
+                st.download_button(label=f"📥 Tải {name}", data=byte_data, file_name=f"watermark_{name}", mime="image/jpeg")
 
 
 
