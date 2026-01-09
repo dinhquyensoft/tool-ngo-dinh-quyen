@@ -34,7 +34,7 @@ image_files = st.file_uploader("📁 Bước 2: Chọn các ảnh muốn đóng 
 
 # SỬA LỖI VỊ TRÍ: Chuyển từ Checkbox sang Radio để chỉ được chọn 1 ô duy nhất
 
-st.subheader("📍 Vị trí đóng dấu (Chỉ chọn 1)")
+st.subheader("📍 Vị trí đóng dấu logo ")
 
 pos_options = [
 
