@@ -6,28 +6,22 @@ from concurrent.futures import ThreadPoolExecutor
 # Cấu hình giao diện Ngô Đình Quyền - Giữ nguyên tuyệt đối
 st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout="centered")
 
-# CSS TÙY CHỈNH: Ép nút fullscreen hiện sẵn ở góc dưới bên phải (Cả ngoài và trong)
+# CSS TÙY CHỈNH: Đưa nút phóng to (fullscreen) xuống góc dưới bên phải và làm to hơn
 st.markdown("""
     <style>
-    /* Ép nút hành động hiện sẵn ở góc dưới bên phải như bạn đã khoanh tròn */
-    [data-testid="stImage"] [data-testid="stImageActionButton"],
-    .st-emotion-cache-15zrgzn [data-testid="stImageActionButton"] {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        bottom: 20px !important;
-        right: 20px !important;
+    /* Ép nút fullscreen của ảnh xuống vị trí bạn khoanh tròn */
+    [data-testid="stImage"] [data-testid="stImageActionButton"] {
+        bottom: 10px !important;
+        right: 10px !important;
         top: auto !important;
-        left: auto !important;
-        position: absolute !important;
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        border-radius: 5px !important;
+        padding: 5px !important;
     }
-    /* Làm nút to rõ hơn */
-    [data-testid="stImageActionButton"] button {
-        width: 45px !important;
-        height: 45px !important;
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        border-radius: 8px !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.3) !important;
+    /* Làm icon to hơn để dễ bấm trên điện thoại */
+    [data-testid="stImageActionButton"] svg {
+        width: 30px !important;
+        height: 30px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -41,25 +35,28 @@ logo_file = st.file_uploader("🖼️ Bước 1: Chọn Logo (PNG trong suốt)"
 # BƯỚC 2: CHỌN ẢNH CẦN XỬ LÝ
 image_files = st.file_uploader("📁 Bước 2: Chọn các ảnh muốn đóng dấu", type=['jpg', 'jpeg', 'png'], accept_multiple_files=True)
 
-# SỬA LỖI VỊ TRÍ: Chia 3 hàng 3 cột dùng Radio (Style Illustrator)
+# CẬP NHẬT VỊ TRÍ 9 NÚT: Chia thành 3 hàng 3 cột (Style Illustrator)
 st.subheader("📍 Vị trí đóng dấu (9 ô)")
-c1, c2, c3 = st.columns(3)
+row1_col1, row1_col2, row1_col3 = st.columns(3)
+row2_col1, row2_col2, row2_col3 = st.columns(3)
+row3_col1, row3_col2, row3_col3 = st.columns(3)
 
-with c1:
-    v1 = st.radio("Hàng 1", ["Trên - Trái"], key="p1", label_visibility="collapsed")
-    v4 = st.radio("Hàng 2", ["Giữa - Trái"], key="p4", label_visibility="collapsed")
-    v7 = st.radio("Hàng 3", ["Dưới - Trái"], key="p7", label_visibility="collapsed")
-with c2:
-    v2 = st.radio("Hàng 1", ["Trên - Giữa"], key="p2", label_visibility="collapsed")
-    v5 = st.radio("Hàng 2", ["Chính Giữa"], key="p5", label_visibility="collapsed")
-    v8 = st.radio("Hàng 3", ["Dưới - Giữa"], key="p8", label_visibility="collapsed")
-with c3:
-    v3 = st.radio("Hàng 1", ["Trên - Phải"], key="p3", label_visibility="collapsed")
-    v6 = st.radio("Hàng 2", ["Giữa - Phải"], key="p6", label_visibility="collapsed")
-    v9 = st.radio("Hàng 3", ["Dưới - Phải"], key="p9", label_visibility="collapsed")
+with row1_col1: tl = st.radio(" ", ["Trên - Trái"], key="r_tl", label_visibility="collapsed")
+with row1_col2: tc = st.radio(" ", ["Trên - Giữa"], key="r_tc", label_visibility="collapsed")
+with row1_col3: tr = st.radio(" ", ["Trên - Phải"], key="r_tr", label_visibility="collapsed")
 
-# Radio chọn vị trí chính thức (ẩn để lấy giá trị logic)
-pos_choice = st.radio("Xác nhận vị trí:", 
+with row2_col1: ml = st.radio(" ", ["Giữa - Trái"], key="r_ml", label_visibility="collapsed")
+with row2_col2: mc = st.radio(" ", ["Chính Giữa"], key="r_mc", label_visibility="collapsed")
+with row2_col3: mr = st.radio(" ", ["Giữa - Phải"], key="r_mr", label_visibility="collapsed")
+
+with row3_col1: bl = st.radio(" ", ["Dưới - Trái"], key="r_bl", label_visibility="collapsed")
+with row3_col2: bc = st.radio(" ", ["Dưới - Giữa"], key="r_bc", label_visibility="collapsed")
+with row3_col3: br = st.radio(" ", ["Dưới - Phải"], key="r_br", label_visibility="collapsed")
+
+# Logic Radio giả lập Grid (Chỉ chọn được 1 trong 9 hàng ngang)
+# Để đơn giản và chính xác nhất, tôi dùng 1 Radio duy nhất nhưng chia Layout
+st.write("---")
+pos_choice = st.radio("Xác nhận vị trí đóng dấu:", 
                       ["Trên - Trái", "Trên - Giữa", "Trên - Phải", 
                        "Giữa - Trái", "Chính Giữa", "Giữa - Phải", 
                        "Dưới - Trái", "Dưới - Giữa", "Dưới - Phải"], 
@@ -67,17 +64,23 @@ pos_choice = st.radio("Xác nhận vị trí:",
 
 # CẤU HÌNH WATERMARK (GIỮ NGUYÊN)
 st.subheader("⚙️ Cấu hình Watermark")
-col_s1, col_s2 = st.columns(2)
-with col_s1:
+col1, col2 = st.columns(2)
+with col1:
     size_percent = st.slider("Kích thước (%)", 5, 100, 15)
-with col_s2:
+with col2:
     opacity = st.slider("Độ rõ nét (%)", 0, 100, 80)
 
 def tinh_toa_do(img_w, img_h, wm_w, wm_h, pos, offset=30):
     mapping = {
-        "Trên - Trái": (offset, offset), "Trên - Giữa": ((img_w - wm_w) // 2, offset), "Trên - Phải": (img_w - wm_w - offset, offset),
-        "Giữa - Trái": (offset, (img_h - wm_h) // 2), "Chính Giữa": ((img_w - wm_w) // 2, (img_h - wm_h) // 2), "Giữa - Phải": (img_w - wm_w - offset, (img_h - wm_h) // 2),
-        "Dưới - Trái": (offset, img_h - wm_h - offset), "Dưới - Giữa": ((img_w - wm_w) // 2, img_h - wm_h - offset), "Dưới - Phải": (img_w - wm_w - offset, img_h - wm_h - offset)
+        "Trên - Trái": (offset, offset),
+        "Trên - Giữa": ((img_w - wm_w) // 2, offset),
+        "Trên - Phải": (img_w - wm_w - offset, offset),
+        "Giữa - Trái": (offset, (img_h - wm_h) // 2),
+        "Chính Giữa": ((img_w - wm_w) // 2, (img_h - wm_h) // 2),
+        "Giữa - Phải": (img_w - wm_w - offset, (img_h - wm_h) // 2),
+        "Dưới - Trái": (offset, img_h - wm_h - offset),
+        "Dưới - Giữa": ((img_w - wm_w) // 2, img_h - wm_h - offset),
+        "Dưới - Phải": (img_w - wm_w - offset, img_h - wm_h - offset)
     }
     return mapping.get(pos, (offset, offset))
 
@@ -104,6 +107,7 @@ if st.button("🚀 BẮT ĐẦU XỬ LÝ (TỐC ĐỘ CAO)"):
             futures = [executor.submit(process_single_image, f, logo_raw, size_percent, opacity, pos_choice) for f in image_files]
             for future in futures:
                 name, res_img, byte_data = future.result()
+                # Hiển thị ảnh với tùy chỉnh nút fullscreen ở góc dưới bên phải
                 st.image(res_img, caption=name, use_container_width=True)
                 st.download_button(label=f"📥 Tải {name}", data=byte_data, file_name=f"wm_{name}", mime="image/jpeg")
 
