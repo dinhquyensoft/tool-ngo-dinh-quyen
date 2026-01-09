@@ -2,44 +2,48 @@ import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
 import io
 
-# Cấu hình Web App Ngô Đình Quyền
-st.set_page_config(page_title="Watermark Pro - Ngô Đình Quyền", layout="centered")
+# Cấu hình giao diện Web nguyên bản của Ngô Đình Quyền
+st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout="centered")
 
-st.markdown("<h1 style='text-align: center;'>🎨 WATERMARK PRO (ILLUSTRATOR STYLE)</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🚀 CÔNG CỤ ĐÓNG DẤU ẢNH CHUYÊN NGHIỆP</h1>", unsafe_allow_html=True)
 
-# 1. CHỌN NGUỒN (Ảnh hoặc Chữ)
+# --- PHẦN 1: CHỌN HÌNH THỨC ĐÓNG DẤU ---
 type_wm = st.radio("Chọn loại đóng dấu:", ["Dùng Logo (Ảnh PNG)", "Dùng Chữ (Nhập text)"], horizontal=True)
 
 logo_file = None
 wm_text = ""
+font_choice = "Arial"
+
 if type_wm == "Dùng Logo (Ảnh PNG)":
-    logo_file = st.file_uploader("🖼️ Bước 1: Chọn Logo PNG", type=['png'])
+    logo_file = st.file_uploader("🖼️ Bước 1: Chọn Logo (PNG trong suốt)", type=['png'])
 else:
-    wm_text = st.text_input("Nhập chữ muốn đóng dấu:", "Ngô Đình Quyền - 0325 545 767")
-    font_choice = st.selectbox("Chọn Font chữ:", ["Arial", "Courier", "Verdana", "Times New Roman"])
+    col_t1, col_t2 = st.columns([2, 1])
+    with col_t1:
+        wm_text = st.text_input("Nhập nội dung chữ:", "Ngô Đình Quyền - 0325 545 767")
+    with col_t2:
+        font_choice = st.selectbox("Font chữ:", ["Arial", "Courier", "Verdana", "Times New Roman"])
 
-image_files = st.file_uploader("📁 Bước 2: Chọn ảnh cần xử lý", type=['jpg', 'png', 'jpeg'], accept_multiple_files=True)
+image_files = st.file_uploader("📁 Bước 2: Chọn các ảnh muốn đóng dấu", type=['jpg', 'jpeg', 'png'], accept_multiple_files=True)
 
-# 2. BẢNG CHỌN 9 VỊ TRÍ (STYLE ILLUSTRATOR)
+# --- PHẦN 2: BẢNG 9 Ô VỊ TRÍ (STYLE ILLUSTRATOR) ---
 st.subheader("📍 Vị trí đóng dấu (9 ô)")
-col_a, col_b, col_c = st.columns([1,1,1])
+# Giữ nguyên logic 3 cột tơi ưu cho điện thoại
+c_left, c_mid, c_right = st.columns(3)
 
-# Tạo logic 9 ô chọn bằng Radio theo dạng Grid
-with col_a:
+with c_left:
     pos_tl = st.checkbox("Trên - Trái", key="tl")
     pos_ml = st.checkbox("Giữa - Trái", key="ml")
     pos_bl = st.checkbox("Dưới - Trái", key="bl")
-with col_b:
+with c_mid:
     pos_tc = st.checkbox("Trên - Giữa", key="tc")
-    pos_mc = st.checkbox("Chính Giữa", key="mc", value=True)
+    pos_mc = st.checkbox("Chính Giữa", key="mc", value=True) # Mặc định giữa
     pos_bc = st.checkbox("Dưới - Giữa", key="bc")
-with col_c:
+with c_right:
     pos_tr = st.checkbox("Trên - Phải", key="tr")
     pos_mr = st.checkbox("Giữa - Phải", key="mr")
     pos_br = st.checkbox("Dưới - Phải", key="br")
 
-# Logic chuyển đổi checkbox thành vị trí
-def get_pos():
+def get_selected_pos():
     if pos_tl: return "Trên - Trái"
     if pos_tc: return "Trên - Giữa"
     if pos_tr: return "Trên - Phải"
@@ -50,13 +54,13 @@ def get_pos():
     if pos_bc: return "Dưới - Giữa"
     return "Dưới - Phải"
 
-# 3. CẤU HÌNH THÔNG SỐ
-st.subheader("⚙️ Cấu hình chi tiết")
-c1, c2 = st.columns(2)
-with c1:
-    size_percent = st.slider("Kích thước (%)", 5, 100, 20)
-with c2:
-    opacity = st.slider("Độ mờ (%)", 10, 100, 80)
+# --- PHẦN 3: CẤU HÌNH WATERMARK (GIỮ NGUYÊN GIAO DIỆN CŨ) ---
+st.subheader("⚙️ Cấu hình Watermark")
+col1, col2 = st.columns(2)
+with col1:
+    size_percent = st.slider("Kích thước (%)", 5, 100, 15)
+with col2:
+    opacity = st.slider("Độ rõ nét (%)", 0, 100, 80)
 
 def tinh_toa_do(img_w, img_h, wm_w, wm_h, pos, offset=30):
     mapping = {
@@ -72,26 +76,34 @@ def tinh_toa_do(img_w, img_h, wm_w, wm_h, pos, offset=30):
     }
     return mapping.get(pos, (offset, offset))
 
-if st.button("🚀 XỬ LÝ VÀ TẢI VỀ"):
-    if not image_files:
-        st.error("Vui lòng chọn ảnh!")
-    else:
+# --- PHẦN 4: XỬ LÝ VÀ HIỂN THỊ ---
+if st.button("🚀 BẮT ĐẦU XỬ LÝ"):
+    if image_files:
+        current_pos = get_selected_pos()
+        
+        # Chuẩn bị Logo nếu chọn chế độ ảnh
+        logo_raw = None
+        if type_wm == "Dùng Logo (Ảnh PNG)" and logo_file:
+            logo_raw = Image.open(logo_file).convert("RGBA")
+
         for uploaded_file in image_files:
             img = Image.open(uploaded_file).convert("RGBA")
             img_w, img_h = img.size
             
-            # TẠO LỚP WATERMARK
-            wm_layer = Image.new("RGBA", (img_w, img_h), (0,0,0,0))
+            # Khởi tạo lớp đè
+            overlay = Image.new("RGBA", img.size, (0,0,0,0))
             
-            if type_wm == "Dùng Logo (Ảnh PNG)" and logo_file:
-                logo = Image.open(logo_file).convert("RGBA")
-                scale = (img_w * size_percent / 100) / logo.size[0]
-                logo = logo.resize((int(logo.size[0]*scale), int(logo.size[1]*scale)), Image.LANCZOS)
-                wm_w, wm_h = logo.size
+            if type_wm == "Dùng Logo (Ảnh PNG)" and logo_raw:
+                # Logic Resize Logo theo % ảnh gốc
+                scale = (img_w * size_percent / 100) / logo_raw.size[0]
+                wm_w = int(logo_raw.size[0] * scale)
+                wm_h = int(logo_raw.size[1] * scale)
+                wm_final = logo_raw.resize((wm_w, wm_h), Image.LANCZOS)
             else:
-                # Tạo watermark bằng chữ
-                draw = ImageDraw.Draw(wm_layer)
-                f_size = int(img_w * size_percent / 500) # Tính font size theo ảnh
+                # Logic đóng dấu Chữ
+                draw = ImageDraw.Draw(overlay)
+                # Tự động tính kích cỡ font theo chiều rộng ảnh
+                f_size = int(img_w * size_percent / 500) 
                 try:
                     font = ImageFont.truetype(f"{font_choice}.ttf", f_size)
                 except:
@@ -99,21 +111,29 @@ if st.button("🚀 XỬ LÝ VÀ TẢI VỀ"):
                 
                 left, top, right, bottom = draw.textbbox((0, 0), wm_text, font=font)
                 wm_w, wm_h = right - left, bottom - top
-                logo = Image.new("RGBA", (wm_w + 10, wm_h + 10), (0,0,0,0))
-                d = ImageDraw.Draw(logo)
+                wm_final = Image.new("RGBA", (wm_w + 10, wm_h + 10), (0,0,0,0))
+                d = ImageDraw.Draw(wm_final)
                 d.text((5, 5), wm_text, font=font, fill=(255, 255, 255, int(255 * opacity / 100)))
 
-            x, y = tinh_toa_do(img_w, img_h, wm_w, wm_h, get_pos())
-            img.paste(logo, (x, y), logo if type_wm == "Dùng Logo (Ảnh PNG)" else None)
-            
-            # Hiển thị và cho tải về
-            final_img = img.convert("RGB")
-            st.image(final_img, caption=uploaded_file.name, use_container_width=True)
-            
-            buf = io.BytesIO()
-            final_img.save(buf, format="JPEG", quality=90)
-            st.download_button(f"📥 Tải {uploaded_file.name}", buf.getvalue(), f"wm_{uploaded_file.name}", "image/jpeg")
+            # Xử lý độ mờ cho Logo ảnh
+            if type_wm == "Dùng Logo (Ảnh PNG)":
+                alpha = wm_final.split()[3].point(lambda p: p * (opacity / 100))
+                wm_final.putalpha(alpha)
 
-# Chân trang Ngô Đình Quyền
+            # Tính tọa độ và dán
+            x, y = tinh_toa_do(img_w, img_h, wm_w, wm_h, current_pos)
+            img.paste(wm_final, (x, y), wm_final)
+            
+            # Hiển thị kết quả
+            res_img = img.convert("RGB")
+            st.image(res_img, caption=uploaded_file.name, use_container_width=True)
+            
+            # Nút tải về (Fixed lỗi data=...)
+            buf = io.BytesIO()
+            res_img.save(buf, format="JPEG", quality=90)
+            st.download_button(label=f"📥 Tải {uploaded_file.name}", data=buf.getvalue(), file_name=f"wm_{uploaded_file.name}", mime="image/jpeg")
+
+# --- PHẦN 5: CHÂN TRANG BẢN QUYỀN (GIỮ NGUYÊN) ---
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: red; font-weight: bold;'>Bản quyền thuộc về Ngô Đình Quyền. Zalo: 0325.545.767</p>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: red;'>Bản quyền thuộc về Ngô Đình Quyền</h3>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-weight: bold;'>Hotline / Zalo hỗ trợ: 0325.545.767</p>", unsafe_allow_html=True)
