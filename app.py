@@ -1,68 +1,119 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import io
-import os
 
-# Cấu hình giao diện Web chuyên nghiệp
-st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout="centered")
+# Cấu hình Web App Ngô Đình Quyền
+st.set_page_config(page_title="Watermark Pro - Ngô Đình Quyền", layout="centered")
 
-st.markdown("<h1 style='text-align: center;'>🚀 CÔNG CỤ ĐÓNG DẤU ẢNH CHUYÊN NGHIỆP</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🎨 WATERMARK PRO (ILLUSTRATOR STYLE)</h1>", unsafe_allow_html=True)
 
-# Khung chọn Logo và Ảnh
-logo_file = st.file_uploader("🖼️ Bước 1: Chọn Logo (PNG trong suốt)", type=['png'])
-image_files = st.file_uploader("📁 Bước 2: Chọn các ảnh muốn đóng dấu", type=['jpg', 'jpeg', 'png'], accept_multiple_files=True)
+# 1. CHỌN NGUỒN (Ảnh hoặc Chữ)
+type_wm = st.radio("Chọn loại đóng dấu:", ["Dùng Logo (Ảnh PNG)", "Dùng Chữ (Nhập text)"], horizontal=True)
 
-def tinh_toa_do(img_w, img_h, logo_w, logo_h, pos, offset=20):
-    if pos == "Trên - Trái": return (offset, offset)
-    if pos == "Trên - Giữa": return ((img_w - logo_w) // 2, offset)
-    if pos == "Trên - Phải": return (img_w - logo_w - offset, offset)
-    if pos == "Giữa - Trái": return (offset, (img_h - logo_h) // 2)
-    if pos == "Chính Giữa": return ((img_w - logo_w) // 2, (img_h - logo_h) // 2)
-    if pos == "Giữa - Phải": return (img_w - logo_w - offset, (img_h - logo_h) // 2)
-    if pos == "Dưới - Trái": return (offset, img_h - logo_h - offset)
-    if pos == "Dưới - Giữa": return ((img_w - logo_w) // 2, img_h - logo_h - offset)
-    return (img_w - logo_w - offset, img_h - logo_h - offset)
+logo_file = None
+wm_text = ""
+if type_wm == "Dùng Logo (Ảnh PNG)":
+    logo_file = st.file_uploader("🖼️ Bước 1: Chọn Logo PNG", type=['png'])
+else:
+    wm_text = st.text_input("Nhập chữ muốn đóng dấu:", "Ngô Đình Quyền - 0325 545 767")
+    font_choice = st.selectbox("Chọn Font chữ:", ["Arial", "Courier", "Verdana", "Times New Roman"])
 
-if logo_file and image_files:
-    st.subheader("⚙️ Cấu hình Watermark")
-    col1, col2 = st.columns(2)
-    with col1:
-        pos = st.selectbox("Vị trí đóng dấu:", ["Trên - Trái", "Trên - Giữa", "Trên - Phải", "Giữa - Trái", "Chính Giữa", "Giữa - Phải", "Dưới - Trái", "Dưới - Giữa", "Dưới - Phải"], index=4)
-    with col2:
-        size_percent = st.slider("Kích thước Logo (% ảnh):", 5, 50, 15)
-        opacity = st.slider("Độ rõ nét Logo (%):", 0, 100, 80)
+image_files = st.file_uploader("📁 Bước 2: Chọn ảnh cần xử lý", type=['jpg', 'png', 'jpeg'], accept_multiple_files=True)
 
-    if st.button("🚀 BẮT ĐẦU XỬ LÝ"):
-        logo_raw = Image.open(logo_file).convert("RGBA")
+# 2. BẢNG CHỌN 9 VỊ TRÍ (STYLE ILLUSTRATOR)
+st.subheader("📍 Vị trí đóng dấu (9 ô)")
+col_a, col_b, col_c = st.columns([1,1,1])
+
+# Tạo logic 9 ô chọn bằng Radio theo dạng Grid
+with col_a:
+    pos_tl = st.checkbox("Trên - Trái", key="tl")
+    pos_ml = st.checkbox("Giữa - Trái", key="ml")
+    pos_bl = st.checkbox("Dưới - Trái", key="bl")
+with col_b:
+    pos_tc = st.checkbox("Trên - Giữa", key="tc")
+    pos_mc = st.checkbox("Chính Giữa", key="mc", value=True)
+    pos_bc = st.checkbox("Dưới - Giữa", key="bc")
+with col_c:
+    pos_tr = st.checkbox("Trên - Phải", key="tr")
+    pos_mr = st.checkbox("Giữa - Phải", key="mr")
+    pos_br = st.checkbox("Dưới - Phải", key="br")
+
+# Logic chuyển đổi checkbox thành vị trí
+def get_pos():
+    if pos_tl: return "Trên - Trái"
+    if pos_tc: return "Trên - Giữa"
+    if pos_tr: return "Trên - Phải"
+    if pos_ml: return "Giữa - Trái"
+    if pos_mc: return "Chính Giữa"
+    if pos_mr: return "Giữa - Phải"
+    if pos_bl: return "Dưới - Trái"
+    if pos_bc: return "Dưới - Giữa"
+    return "Dưới - Phải"
+
+# 3. CẤU HÌNH THÔNG SỐ
+st.subheader("⚙️ Cấu hình chi tiết")
+c1, c2 = st.columns(2)
+with c1:
+    size_percent = st.slider("Kích thước (%)", 5, 100, 20)
+with c2:
+    opacity = st.slider("Độ mờ (%)", 10, 100, 80)
+
+def tinh_toa_do(img_w, img_h, wm_w, wm_h, pos, offset=30):
+    mapping = {
+        "Trên - Trái": (offset, offset),
+        "Trên - Giữa": ((img_w - wm_w) // 2, offset),
+        "Trên - Phải": (img_w - wm_w - offset, offset),
+        "Giữa - Trái": (offset, (img_h - wm_h) // 2),
+        "Chính Giữa": ((img_w - wm_w) // 2, (img_h - wm_h) // 2),
+        "Giữa - Phải": (img_w - wm_w - offset, (img_h - wm_h) // 2),
+        "Dưới - Trái": (offset, img_h - wm_h - offset),
+        "Dưới - Giữa": ((img_w - wm_w) // 2, img_h - wm_h - offset),
+        "Dưới - Phải": (img_w - wm_w - offset, img_h - wm_h - offset)
+    }
+    return mapping.get(pos, (offset, offset))
+
+if st.button("🚀 XỬ LÝ VÀ TẢI VỀ"):
+    if not image_files:
+        st.error("Vui lòng chọn ảnh!")
+    else:
         for uploaded_file in image_files:
             img = Image.open(uploaded_file).convert("RGBA")
             img_w, img_h = img.size
             
-            # Tính toán kích thước Logo
-            scale = size_percent / 100
-            new_w = int(img_w * scale)
-            new_h = int(logo_raw.size[1] * (new_w / logo_raw.size[0]))
-            logo = logo_raw.resize((new_w, new_h), Image.LANCZOS)
+            # TẠO LỚP WATERMARK
+            wm_layer = Image.new("RGBA", (img_w, img_h), (0,0,0,0))
             
-            # Xử lý độ mờ
-            alpha = logo.split()[3].point(lambda p: p * (opacity / 100))
-            logo.putalpha(alpha)
-            
-            # Chèn logo
-            x, y = tinh_toa_do(img_w, img_h, new_w, new_h, pos)
-            img.paste(logo, (x, y), logo)
-            
-            # Hiển thị kết quả
-            st.image(img.convert("RGB"), caption=f"Ảnh đã xử lý: {uploaded_file.name}", use_container_width=True)
-            
-            # Tạo bộ nhớ đệm để tải về
-            buf = io.BytesIO()
-            img.convert("RGB").save(buf, format="JPEG", quality=95)
-            byte_im = buf.getvalue()
-            
-            st.download_button(label=f"📥 Tải ảnh {uploaded_file.name} về máy", data=byte_im, file_name=f"watermarked_{uploaded_file.name}", mime="image/jpeg")
+            if type_wm == "Dùng Logo (Ảnh PNG)" and logo_file:
+                logo = Image.open(logo_file).convert("RGBA")
+                scale = (img_w * size_percent / 100) / logo.size[0]
+                logo = logo.resize((int(logo.size[0]*scale), int(logo.size[1]*scale)), Image.LANCZOS)
+                wm_w, wm_h = logo.size
+            else:
+                # Tạo watermark bằng chữ
+                draw = ImageDraw.Draw(wm_layer)
+                f_size = int(img_w * size_percent / 500) # Tính font size theo ảnh
+                try:
+                    font = ImageFont.truetype(f"{font_choice}.ttf", f_size)
+                except:
+                    font = ImageFont.load_default()
+                
+                left, top, right, bottom = draw.textbbox((0, 0), wm_text, font=font)
+                wm_w, wm_h = right - left, bottom - top
+                logo = Image.new("RGBA", (wm_w + 10, wm_h + 10), (0,0,0,0))
+                d = ImageDraw.Draw(logo)
+                d.text((5, 5), wm_text, font=font, fill=(255, 255, 255, int(255 * opacity / 100)))
 
-# Chân trang bản quyền nổi bật
+            x, y = tinh_toa_do(img_w, img_h, wm_w, wm_h, get_pos())
+            img.paste(logo, (x, y), logo if type_wm == "Dùng Logo (Ảnh PNG)" else None)
+            
+            # Hiển thị và cho tải về
+            final_img = img.convert("RGB")
+            st.image(final_img, caption=uploaded_file.name, use_container_width=True)
+            
+            buf = io.BytesIO()
+            final_img.save(buf, format="JPEG", quality=90)
+            st.download_button(f"📥 Tải {uploaded_file.name}", buf.getvalue(), f"wm_{uploaded_file.name}", "image/jpeg")
+
+# Chân trang Ngô Đình Quyền
 st.markdown("---")
-st.markdown("<h3 style='text-align: center; color: red;'>Bản quyền thuộc về Ngô Đình Quyền</h3>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-weight: bold;'>Hotline / Zalo hỗ trợ: 0325.545.767</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: red; font-weight: bold;'>Bản quyền thuộc về Ngô Đình Quyền. Zalo: 0325.545.767</p>", unsafe_allow_html=True)
