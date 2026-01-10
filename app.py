@@ -14,6 +14,47 @@ st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout
 
 
 
+# --- CHÈN SAU DÒNG ST.SET_PAGE_CONFIG ---
+
+def check_password():
+    """Trả về True nếu người dùng nhập đúng mật khẩu."""
+    def password_entered():
+        """Kiểm tra mật khẩu người dùng nhập vào."""
+        if st.session_state["username"] in st.secrets["users"] and \
+           st.session_state["password"] == st.secrets["users"][st.session_state["username"]]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Xóa mật khẩu tạm để bảo mật
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # Màn hình đăng nhập khi khách mới truy cập
+        st.markdown("<h2 style='text-align: center;'>🔐 ĐĂNG NHẬP ĐỂ SỬ DỤNG</h2>", unsafe_allow_html=True)
+        st.text_input("Tên đăng nhập", key="username")
+        st.text_input("Mật khẩu", type="password", key="password", on_keydown=None)
+        if st.button("Đăng nhập"):
+            password_entered()
+            st.rerun()
+        st.info("💡 Liên hệ Ngô Đình Quyền (0325.545.767) để nhận tài khoản.")
+        return False
+    elif not st.session_state["password_correct"]:
+        # Thông báo khi nhập sai
+        st.error("❌ Sai tài khoản hoặc mật khẩu.")
+        st.text_input("Tên đăng nhập", key="username")
+        st.text_input("Mật khẩu", type="password", key="password")
+        if st.button("Thử lại"):
+            password_entered()
+            st.rerun()
+        return False
+    else:
+        return True
+
+# DỪNG TOÀN BỘ CODE BÊN DƯỚI NẾU CHƯA ĐĂNG NHẬP
+if not check_password():
+    st.stop()
+
+
+
 # --- CHÈN VÀO DƯỚI DÒNG 13 (st.set_page_config) ---
 if 'processed_images' not in st.session_state:
     st.session_state.processed_images = []
