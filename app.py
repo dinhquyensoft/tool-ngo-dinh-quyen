@@ -13,6 +13,51 @@ from concurrent.futures import ThreadPoolExecutor
 st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout="centered")
 
 
+# CHỈ BỔ SUNG ĐOẠN NÀY VÀO PHẦN ĐẦU FILE APP.PY
+st.markdown("""
+    <style>
+    /* Thanh liên hệ cố định ở GÓC DƯỚI BÊN TRÁI */
+    .contact-container {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        z-index: 999999;
+    }
+    .contact-btn {
+        text-decoration: none;
+        color: white !important;
+        padding: 12px 20px;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 2px 4px 12px rgba(0,0,0,0.3);
+        transition: transform 0.2s;
+        min-width: 140px;
+    }
+    .contact-btn:hover {
+        transform: scale(1.05);
+    }
+    .btn-zalo { background-color: #0068ff; }
+    .btn-call { background-color: #28a745; }
+    </style>
+
+    <div class="contact-container">
+        <a href="https://zalo.me/0325545767" target="_blank" class="contact-btn btn-zalo">
+             Zalo: 0325.545.767
+        </a>
+        <a href="tel:0325545767" class="contact-btn btn-call">
+             Gọi: 0325.545.767
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 
 # Tiêu đề gốc
 
