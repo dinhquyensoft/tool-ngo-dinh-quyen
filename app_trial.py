@@ -4,7 +4,9 @@ import io
 from concurrent.futures import ThreadPoolExecutor
 
 # Cấu hình giao diện Ngô Đình Quyền - Giữ nguyên tuyệt đối
-st.set_page_config(page_title="Đóng dấu ảnh (Dùng thử) - Ngô Đình Quyền", layout="centered")
+if 'processed_images' not in st.session_state:
+    st.session_state.processed_images = []
+
 
 # KHỞI TẠO BỘ ĐẾM GIỚI HẠN (5 LƯỢT)
 if 'usage_count' not in st.session_state:
@@ -97,22 +99,31 @@ def process_single_image(uploaded_file, logo_raw, size_percent, opacity, pos_cho
     res_img.save(buf, format="JPEG", quality=90)
     return uploaded_file.name, res_img, buf.getvalue()
 
-# XỬ LÝ VÀ GIỚI HẠN
-if st.button("🚀 BẮT ĐẦU XỬ LÝ (BẢN TRIAL)"):
-    if st.session_state.usage_count >= 5:
-        st.error("❌ Bạn đã hết lượt dùng thử miễn phí (5 lượt/ngày).")
-        st.warning("👉 Vui lòng liên hệ Zalo: 0325.545.767 để đăng ký bản PRO không giới hạn!")
-    elif logo_file and image_files:
-        st.session_state.usage_count += 1
+# THAY THẾ TOÀN BỘ KHỐI LỆNH NÚT BẤM VÀ HIỂN THỊ CŨ BẰNG ĐOẠN NÀY
+if st.button("🚀 BẮT ĐẦU XỬ LÝ (TỐC ĐỘ CAO)"):
+    if logo_file and image_files:
+        st.session_state.processed_images = [] # Làm mới bộ nhớ mỗi lần nhấn nút
         logo_raw = Image.open(logo_file).convert("RGBA")
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(process_single_image, f, logo_raw, size_percent, opacity, selected_pos) for f in image_files]
             for future in futures:
                 name, res_img, byte_data = future.result()
-                st.image(res_img, caption=name, use_container_width=True)
-                st.download_button(label=f"📥 Tải {name}", data=byte_data, file_name=f"watermark_{name}", mime="image/jpeg")
-    else:
-        st.warning("Vui lòng chọn đầy đủ Logo và Ảnh.")
+                # Cất ảnh vào bộ nhớ thay vì chỉ hiển thị
+                st.session_state.processed_images.append({"name": name, "img": res_img, "data": byte_data})
+                
+
+# HIỂN THỊ KẾT QUẢ TỪ BỘ NHỚ (Giúp ảnh không bị mất khi bấm tải)
+if st.session_state.processed_images:
+    for item in st.session_state.processed_images:
+        st.image(item["img"], caption=item["name"], use_container_width=True)
+        st.download_button(
+            label=f"📥 Tải {item['name']}", 
+            data=item["data"], 
+            file_name=f"watermark_{item['name']}", 
+            mime="image/jpeg", 
+            key=f"dl_{item['name']}" # Key này giữ cho trang web không bị reset
+        )
+
 
 # CHÂN TRANG BẢN QUYỀN
 st.markdown("---")
