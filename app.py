@@ -13,6 +13,13 @@ from concurrent.futures import ThreadPoolExecutor
 st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout="centered")
 
 
+
+# --- CHÈN VÀO DƯỚI DÒNG 13 (st.set_page_config) ---
+if 'processed_images' not in st.session_state:
+    st.session_state.processed_images = []
+
+
+
 # ĐOẠN MÃ BỔ SUNG: NÚT LIÊN HỆ GÓC DƯỚI BÊN TRÁI (SỬ DỤNG ICON ZALO CHUẨN)
 st.markdown("""
     <style>
@@ -185,26 +192,29 @@ def process_single_image(uploaded_file, logo_raw, size_percent, opacity, pos_cho
 
 
 
-# XỬ LÝ CHÍNH TỐC ĐỘ CAO
-
+# THAY THẾ TOÀN BỘ KHỐI LỆNH NÚT BẤM VÀ HIỂN THỊ CŨ BẰNG ĐOẠN NÀY
 if st.button("🚀 BẮT ĐẦU XỬ LÝ (TỐC ĐỘ CAO)"):
-
     if logo_file and image_files:
-
+        st.session_state.processed_images = [] # Làm mới bộ nhớ mỗi lần nhấn nút
         logo_raw = Image.open(logo_file).convert("RGBA")
-
         with ThreadPoolExecutor() as executor:
-
             futures = [executor.submit(process_single_image, f, logo_raw, size_percent, opacity, selected_pos) for f in image_files]
-
             for future in futures:
-
                 name, res_img, byte_data = future.result()
+                # Cất ảnh vào bộ nhớ thay vì chỉ hiển thị
+                st.session_state.processed_images.append({"name": name, "img": res_img, "data": byte_data})
 
-                st.image(res_img, caption=name, use_container_width=True)
-
-                st.download_button(label=f"📥 Tải {name}", data=byte_data, file_name=f"watermark_{name}", mime="image/jpeg")
-
+# HIỂN THỊ KẾT QUẢ TỪ BỘ NHỚ (Giúp ảnh không bị mất khi bấm tải)
+if st.session_state.processed_images:
+    for item in st.session_state.processed_images:
+        st.image(item["img"], caption=item["name"], use_container_width=True)
+        st.download_button(
+            label=f"📥 Tải {item['name']}", 
+            data=item["data"], 
+            file_name=f"watermark_{item['name']}", 
+            mime="image/jpeg", 
+            key=f"dl_{item['name']}" # Key này giữ cho trang web không bị reset
+        )
 
 
 # CHÂN TRANG BẢN QUYỀN
