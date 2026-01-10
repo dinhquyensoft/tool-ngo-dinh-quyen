@@ -13,46 +13,60 @@ from concurrent.futures import ThreadPoolExecutor
 st.set_page_config(page_title="Đóng dấu ảnh - Ngô Đình Quyền", layout="centered")
 
 
-# CHỈ BỔ SUNG ĐOẠN NÀY VÀO PHẦN ĐẦU FILE APP.PY
+# ĐOẠN MÃ BỔ SUNG: NÚT LIÊN HỆ GÓC DƯỚI BÊN TRÁI (SỬ DỤNG ICON ZALO CHUẨN)
 st.markdown("""
     <style>
-    /* Thanh liên hệ cố định ở GÓC DƯỚI BÊN TRÁI */
     .contact-container {
         position: fixed;
         bottom: 20px;
         left: 20px;
         display: flex;
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: column-reverse; 
+        gap: 12px;
         z-index: 999999;
     }
     .contact-btn {
-        text-decoration: none;
+        text-decoration: none !important;
         color: white !important;
-        padding: 12px 20px;
+        padding: 10px 18px;
         border-radius: 50px;
         font-weight: bold;
-        font-size: 14px;
+        font-size: 15px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        gap: 10px;
         box-shadow: 2px 4px 12px rgba(0,0,0,0.3);
         transition: transform 0.2s;
-        min-width: 140px;
+        min-width: 180px;
     }
     .contact-btn:hover {
         transform: scale(1.05);
+        text-decoration: none !important;
     }
     .btn-zalo { background-color: #0068ff; }
     .btn-call { background-color: #28a745; }
+    
+    /* Cấu hình icon */
+    .icon-svg {
+        width: 24px;
+        height: 24px;
+        fill: white;
+    }
     </style>
 
     <div class="contact-container">
         <a href="https://zalo.me/0325545767" target="_blank" class="contact-btn btn-zalo">
-             Zalo: 0325.545.767
+            <svg class="icon-svg" viewBox="0 0 40 40">
+                <path d="M20,2C10.1,2,2,8.3,2,16.1c0,4.4,2.6,8.3,6.7,10.9L7,34l7.1-3.6c1.9,0.5,3.9,0.8,5.9,0.8c9.9,0,18-6.3,18-14.1 C38,8.3,29.9,2,20,2z M28.5,22c-0.4,1.1-2.1,1.8-3.3,1.8c-1.3,0-2.6-0.4-3.8-1.2c-1.1-0.7-2.1-1.6-2.9-2.7c-0.7-1-1.3-2.1-1.6-3.3 c-0.3-1.2-0.2-2.1,0.2-2.6c0.4-0.5,1.1-0.8,1.8-0.8c0.3,0,0.6,0.1,0.8,0.2c0.2,0.1,0.4,0.3,0.5,0.6c0.4,1,0.9,2,1.3,3 c0.1,0.3,0.1,0.5,0,0.8c-0.1,0.3-0.4,0.6-0.7,0.9c-0.1,0.1-0.1,0.2-0.1,0.3c0,0.1,0.1,0.3,0.2,0.5c0.6,0.9,1.4,1.7,2.3,2.3 c0.2,0.1,0.4,0.2,0.5,0.2c0.1,0,0.2-0.1,0.3-0.1c0.3-0.3,0.6-0.6,0.9-0.7c0.3-0.1,0.5-0.1,0.8,0c1,0.4,2,0.9,3,1.3 c0.3,0.1,0.5,0.3,0.6,0.5C29.3,21.4,29,21.7,28.5,22z"/>
+            </svg>
+            Zalo: 0325.545.767
         </a>
         <a href="tel:0325545767" class="contact-btn btn-call">
-             Gọi: 0325.545.767
+            <svg class="icon-svg" viewBox="0 0 24 24">
+                <path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/>
+            </svg>
+            Gọi: 0325.545.767
         </a>
     </div>
     """, unsafe_allow_html=True)
