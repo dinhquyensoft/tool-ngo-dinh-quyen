@@ -99,17 +99,50 @@ def process_single_image(uploaded_file, logo_raw, size_percent, opacity, pos_cho
     res_img.save(buf, format="JPEG", quality=90)
     return uploaded_file.name, res_img, buf.getvalue()
 
-# THAY THẾ TOÀN BỘ KHỐI LỆNH NÚT BẤM VÀ HIỂN THỊ CŨ BẰNG ĐOẠN NÀY
+# THAY THẾ KHỐI LỆNH XỬ LÝ VÀ HIỂN THỊ TRÊN BẢN TRIAL
 if st.button("🚀 BẮT ĐẦU XỬ LÝ (TỐC ĐỘ CAO)"):
-    if logo_file and image_files:
+    # 1. Kiểm tra giới hạn lượt dùng
+    if st.session_state.usage_count >= 5:
+        st.error("❌ Bạn đã hết lượt dùng thử miễn phí hôm nay.")
+        st.markdown("""
+            <div style='padding: 20px; border: 2px solid red; border-radius: 10px; text-align: center; background-color: #fff5f5;'>
+                <h2 style='color: red;'>💎 NÂNG CẤP BẢN PRO</h2>
+                <p>Để không giới hạn lượt đóng dấu và sử dụng thêm các tính năng cao cấp,</p>
+                <p>vui lòng liên hệ trực tiếp với <b>Ngô Đình Quyền</b></p>
+                <a href='https://zalo.me/0325545767' style='background-color: #0068ff; color: white; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-weight: bold;'>MỞ KHÓA BẢN PRO NGAY</a>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    # 2. Xử lý nếu còn lượt
+    elif logo_file and image_files:
+        st.session_state.usage_count += 1 
         st.session_state.processed_images = [] # Làm mới bộ nhớ mỗi lần nhấn nút
+        
         logo_raw = Image.open(logo_file).convert("RGBA")
         with ThreadPoolExecutor() as executor:
             futures = [executor.submit(process_single_image, f, logo_raw, size_percent, opacity, selected_pos) for f in image_files]
             for future in futures:
                 name, res_img, byte_data = future.result()
-                # Cất ảnh vào bộ nhớ thay vì chỉ hiển thị
                 st.session_state.processed_images.append({"name": name, "img": res_img, "data": byte_data})
+        
+        st.rerun() # Cập nhật lại giao diện và số lượt dùng
+    else:
+        st.warning("Vui lòng chọn đầy đủ Logo và Ảnh.")
+
+# HIỂN THỊ KẾT QUẢ VÀ NÚT MUA (Chỉ hiện khi có ảnh đã xử lý)
+if st.session_state.processed_images:
+    st.success(f"✅ Đã xử lý xong! Bạn còn {5 - st.session_state.usage_count} lượt dùng thử.")
+    for item in st.session_state.processed_images:
+        st.image(item["img"], caption=item["name"], use_container_width=True)
+        st.download_button(
+            label=f"📥 Tải {item['name']}", 
+            data=item["data"], 
+            file_name=f"watermark_{item['name']}", 
+            mime="image/jpeg", 
+            key=f"dl_{item['name']}"
+        )
+    # Dòng chữ nhắc nhở nâng cấp dưới mỗi ảnh
+    st.markdown("<p style='text-align: center; color: #D4AF37;'>✨ <i>Liên hệ Zalo 0325.545.767 để sở hữu bản quyền vĩnh viễn không giới hạn!</i></p>", unsafe_allow_html=True)
                 
 
 # HIỂN THỊ KẾT QUẢ TỪ BỘ NHỚ (Giúp ảnh không bị mất khi bấm tải)
